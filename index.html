@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f1e8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="小錢包">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<title>小錢包</title>
+<style>
+:root{
+  --bg:#f7f1e8; --card:#fffaf3; --ink:#5b4a3e; --soft:#8f7d6f; --line:#eadfce;
+  --tea:#c9a88a; --tea-d:#a9876a; --sage:#93a98a; --sage-l:#e6eee0; --rose:#d9a5a0; --rose-l:#f6e4e1;
+  --gold:#d8b26e; --gold-l:#f6ecd7; --shadow:0 2px 10px rgba(120,90,60,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#2a2420; --card:#352e29; --ink:#f0e6da; --soft:#bba897; --line:#4a3f37;
+    --tea:#c9a88a; --tea-d:#dcc0a6; --sage:#a9bf9f; --sage-l:#3a4636; --rose:#e0afa9; --rose-l:#4a3532;
+    --gold:#e0bf80; --gold-l:#4a3f2b; --shadow:0 2px 10px rgba(0,0,0,.3);}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;font-size:16px;line-height:1.5}
+main{max-width:520px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom))}
+h1{font-size:20px;margin:4px 0 2px;font-weight:600}
+h2{font-size:16px;margin:0 0 10px;font-weight:600}
+.sub{color:var(--soft);font-size:14px;margin:0 0 14px}
+.card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.row{display:flex;align-items:center;gap:8px}
+.between{justify-content:space-between}
+.muted{color:var(--soft);font-size:14px}
+.big{font-size:28px;font-weight:600;letter-spacing:.5px}
+.bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0 6px}
+.bar>i{display:block;height:100%;background:var(--sage);border-radius:99px;transition:width .4s}
+.bar.warm>i{background:var(--gold)}
+.bar.rose>i{background:var(--rose)}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.seg{display:flex;background:var(--line);border-radius:14px;padding:4px;margin-bottom:12px}
+.seg button{flex:1;padding:8px;border-radius:10px;font-weight:600;color:var(--soft)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.amount{display:flex;align-items:center;gap:6px;border-bottom:2px solid var(--line);padding:4px 2px 8px;margin-bottom:12px}
+.amount span{font-size:26px;color:var(--soft)}
+.amount input{flex:1;min-width:0;border:0;background:none;font:inherit;font-size:36px;font-weight:600;color:var(--ink);outline:none}
+.label{font-size:13px;color:var(--soft);margin:10px 0 6px}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.chip{padding:10px 4px;border-radius:14px;background:var(--bg);text-align:center;font-size:14px;line-height:1.3;border:1.5px solid transparent}
+.chip b{display:block;font-size:22px;font-weight:400;margin-bottom:2px}
+.chip.need{background:var(--sage-l)}
+.chip.care{background:var(--rose-l)}
+.chip.inc{background:var(--gold-l)}
+.chip:active{transform:scale(.95)}
+.note{width:100%;border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;font:inherit;color:var(--ink);margin-top:12px;outline:none}
+.tired{display:flex;gap:8px}
+.tired button{flex:1;padding:10px 4px;border-radius:14px;background:var(--bg);font-size:14px;border:1.5px solid transparent}
+.tired button.on{border-color:var(--tea);background:var(--gold-l)}
+.list .it{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.list .it:last-child{border-bottom:0}
+.list .ic{font-size:20px;width:30px;text-align:center}
+.list .nm{flex:1;min-width:0}
+.list .nm small{display:block;color:var(--soft);font-size:12px}
+.list .am{font-weight:600}
+.list .am.in{color:var(--sage)}
+.x{color:var(--soft);font-size:18px;padding:4px 8px}
+.btn{display:inline-block;padding:10px 16px;border-radius:12px;background:var(--tea);color:#fff;font-weight:600}
+.btn.ghost{background:var(--bg);color:var(--ink)}
+.btn.sage{background:var(--sage)}
+.btn.small{padding:6px 12px;font-size:14px}
+.full{width:100%}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
+  display:flex;justify-content:center;padding:6px 8px calc(6px + env(safe-area-inset-bottom));z-index:5}
+nav div{display:flex;max-width:520px;width:100%}
+nav button{flex:1;padding:6px 0;font-size:12px;color:var(--soft);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button b{font-size:22px;font-weight:400;filter:grayscale(.6);opacity:.7}
+nav button.on{color:var(--ink);font-weight:600}
+nav button.on b{filter:none;opacity:1}
+nav .dot b{position:relative}
+nav .dot b::after{content:"";position:absolute;top:2px;right:-4px;width:8px;height:8px;border-radius:50%;background:var(--rose)}
+.page{display:none}.page.on{display:block}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;
+  display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
+.toast button{color:var(--gold);font-weight:600}
+.banner{background:var(--gold-l);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:14px}
+.modal{position:fixed;inset:0;background:rgba(60,40,30,.35);display:none;align-items:flex-end;justify-content:center;z-index:10}
+.modal.on{display:flex}
+.sheet{background:var(--card);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+.split .ln{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line)}
+.split label{display:flex;gap:8px;align-items:center}
+.split input[type=checkbox]{width:20px;height:20px;accent-color:var(--sage)}
+.field{display:flex;gap:8px;align-items:center;margin:8px 0}
+.field input{flex:1;min-width:0;border:1.5px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 10px;font:inherit;color:var(--ink);outline:none}
+.field input.n{max-width:110px;text-align:right}
+.rate{display:flex;gap:6px}
+.rate button{padding:5px 12px;border-radius:99px;background:var(--bg);font-size:14px;border:1.5px solid transparent}
+.rate button.on[data-r="好"]{background:var(--sage-l);border-color:var(--sage)}
+.rate button.on[data-r="普通"]{background:var(--gold-l);border-color:var(--gold)}
+.rate button.on[data-r="差"]{background:var(--rose-l);border-color:var(--rose)}
+.mo{border-bottom:1px solid var(--line);padding:14px 0}
+.mo:last-child{border-bottom:0}
+.stat{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px;font-size:13px;color:var(--soft)}
+.stat b{display:block;color:var(--ink);font-size:15px}
+.wish{padding:12px 0;border-bottom:1px solid var(--line)}
+.wish:last-child{border-bottom:0}
+.wish .acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--bg);color:var(--soft)}
+.pill.ready{background:var(--gold-l);color:var(--ink)}
+.empty{color:var(--soft);font-size:14px;text-align:center;padding:14px 0}
+details summary{cursor:pointer;color:var(--soft);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+
+<!-- ============ 記帳 ============ -->
+<section class="page on" id="p-home">
+  <h1 id="hello">嗨</h1>
+  <p class="sub" id="hello-sub"></p>
+  <div id="banners"></div>
+
+  <div class="card">
+    <div class="seg" id="mode">
+      <button class="on" data-m="out">花了</button>
+      <button data-m="in">收入進來</button>
+    </div>
+    <div class="amount"><span>$</span><input id="amt" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off"></div>
+    <div id="cats-out">
+      <div class="label">必要的</div>
+      <div class="chips" id="need"></div>
+      <div class="label">照顧自己的</div>
+      <div class="chips" id="care"></div>
+    </div>
+    <div id="cats-in" style="display:none">
+      <div class="label">是哪一種收入？</div>
+      <div class="chips" id="inc"></div>
+    </div>
+    <input class="note" id="note" placeholder="備註（可以不寫）">
+    <p class="muted" style="margin:8px 0 0">輸入金額 → 點一下分類，就記好了。</p>
+  </div>
+
+  <div class="card">
+    <h2>今天累不累？</h2>
+    <div class="tired" id="tired">
+      <button data-t="0">☀️ 還好</button>
+      <button data-t="1">🌥 有點累</button>
+      <button data-t="2">🌙 好累</button>
+    </div>
+    <p class="muted" id="tired-msg" style="margin:8px 0 0"></p>
+  </div>
+
+  <div class="card" id="care-card"></div>
+  <div class="card" id="life-card"></div>
+
+  <div class="card">
+    <div class="row between"><h2 style="margin:0">這個月記了什麼</h2><span class="muted" id="list-count"></span></div>
+    <div class="list" id="list"></div>
+  </div>
+</section>
+
+<!-- ============ 想買清單 ============ -->
+<section class="page" id="p-wish">
+  <h1>想買清單</h1>
+  <p class="sub">看到想買的先放這裡，讓它等兩天。兩天後還想要，就安心買。</p>
+  <div class="card">
+    <div class="field"><input id="w-name" placeholder="想買什麼？"></div>
+    <div class="field"><input id="w-price" inputmode="numeric" placeholder="大概多少錢"><button class="btn" id="w-add">先放著</button></div>
+  </div>
+  <div class="card"><h2>冷靜中 &amp; 可以決定了</h2><div id="w-list"></div></div>
+  <div class="card" id="w-saved"></div>
+</section>
+
+<!-- ============ 每月 ============ -->
+<section class="page" id="p-month">
+  <h1>每月紀錄</h1>
+  <p class="sub">每個月的收入和感覺，之後可以拿來對照流年。</p>
+  <div class="card" id="m-tired"></div>
+  <div class="card" id="m-worst"></div>
+  <div class="card"><h2>每個月</h2><div id="m-list"></div></div>
+</section>
+
+<!-- ============ 設定 ============ -->
+<section class="page" id="p-set">
+  <h1>設定</h1>
+  <p class="sub">設一次就好，之後想改再來。</p>
+  <div class="card">
+    <h2>怎麼稱呼妳</h2>
+    <div class="field"><input id="s-nick" placeholder="例如：芷薰"></div>
+    <p class="muted" style="margin:0">只存在這台手機裡，首頁會跟妳打招呼。</p>
+  </div>
+  <div class="card">
+    <h2>每月固定要付的</h2>
+    <p class="muted" style="margin-top:-4px">收入進來時，會先提醒妳把這些分出來。</p>
+    <div id="fixed"></div>
+    <button class="btn ghost small" id="fixed-add">＋ 加一項</button>
+  </div>
+  <div class="card">
+    <h2>分錢的比例</h2>
+    <div class="field"><span style="flex:1">存起來 <span class="muted">（收入的 %）</span></span><input class="n" id="s-save" inputmode="numeric"> %</div>
+    <div class="field"><span style="flex:1">累了的預算 <span class="muted">（收入的 %）</span></span><input class="n" id="s-care" inputmode="numeric"> %</div>
+    <p class="muted">「累了的預算」＝外送、犒賞、保養、衣服、衝動買的。賺多就多寵自己一點，賺少就溫柔一點。</p>
+    <label class="row" style="margin-top:8px"><input type="checkbox" id="s-worst" style="width:20px;height:20px;accent-color:var(--sage)"> 用「最差的那個月」來提示每天生活費</label>
+  </div>
+  <div class="card">
+    <h2>備份</h2>
+    <p class="muted" style="margin-top:-4px">資料只存在這台手機（或電腦）的瀏覽器裡，沒有上傳到任何地方。<br>⚠️ 如果清除瀏覽器資料、或換手機，資料會不見，所以偶爾按一下「匯出備份」。</p>
+    <p class="muted" id="last-backup"></p>
+    <div class="row" style="flex-wrap:wrap">
+      <button class="btn sage" id="export">匯出備份</button>
+      <button class="btn ghost" id="import-btn">從備份還原</button>
+      <input type="file" id="import" accept=".json,application/json" hidden>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<nav><div>
+  <button class="on" data-p="home"><b>🌿</b>記帳</button>
+  <button data-p="wish" id="nav-wish"><b>🛍</b>想買</button>
+  <button data-p="month"><b>🌙</b>每月</button>
+  <button data-p="set"><b>⚙️</b>設定</button>
+</div></nav>
+
+<div class="toast" id="toast"><span id="toast-t"></span><button id="toast-undo">復原</button></div>
+
+<div class="modal" id="split"><div class="sheet split" id="split-body"></div></div>
+
+<script>
+(function(){
+"use strict";
+var KEY = "xiaoqianbao-v1";
+var NEED = [["🍚","吃飯"],["🚌","交通"],["🏠","房租"],["💡","水電網路"],["🧻","日用品"],["🏥","醫療"],["🤝","人情"],["📦","其他必要"]];
+var CARE = [["🛵","外送"],["🍰","犒賞"],["🧴","保養"],["👗","衣服"],["✨","衝動買"],["☕","飲料點心"],["🎁","小確幸"]];
+var INC = [["💰","抽成"],["🎉","獎金"],["🔮","占星諮詢"],["🌱","其他收入"]];
+var CARE_SET = {}; CARE.forEach(function(c){CARE_SET[c[1]]=1;});
+var ICON = {}; NEED.concat(CARE,INC).forEach(function(c){ICON[c[1]]=c[0];});
+var FIXED_CATS = {"房租":1,"水電網路":1};
+var WAIT_MS = 48*3600*1000;
+
+// ---------- 資料 ----------
+var db;
+function blank(){return {v:1, entries:[], tired:{}, wishes:[], months:{}, splits:{}, lastBackup:0,
+  settings:{nick:"", fixed:[{name:"房租",amt:0},{name:"水電網路",amt:0}], savePct:10, carePct:15, worst:true}};}
+function load(){
+  try{ var s = localStorage.getItem(KEY); db = s ? JSON.parse(s) : blank(); }catch(e){ db = blank(); }
+  var b = blank();
+  for (var k in b) if (db[k]===undefined) db[k]=b[k];
+  for (var k2 in b.settings) if (db.settings[k2]===undefined) db.settings[k2]=b.settings[k2];
+}
+var storageOK = true;
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){ storageOK=false; } }
+
+// ---------- 小工具 ----------
+function $(id){return document.getElementById(id);}
+function pad(n){return (n<10?"0":"")+n;}
+function dayStr(d){d=d||new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function monStr(d){return dayStr(d).slice(0,7);}
+function money(n){return "$"+Math.round(n).toLocaleString("en-US");}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function num(v){v=String(v||"").replace(/[^\d.]/g,"");return v?Number(v):0;}
+function monthLabel(m){var p=m.split("-");return p[0]+" 年 "+Number(p[1])+" 月";}
+function daysInMonth(d){return new Date(d.getFullYear(),d.getMonth()+1,0).getDate();}
+function fixedTotal(){return db.settings.fixed.reduce(function(a,f){return a+num(f.amt);},0);}
+
+function monthData(m){
+  var r={income:0,need:0,care:0,fixedPaid:0,n:0};
+  db.entries.forEach(function(e){
+    if(e.date.slice(0,7)!==m) return;
+    r.n++;
+    if(e.kind==="in") r.income+=e.amt;
+    else if(CARE_SET[e.cat]) r.care+=e.amt;
+    else { r.need+=e.amt; if(FIXED_CATS[e.cat]) r.fixedPaid+=e.amt; }
+  });
+  return r;
+}
+
+// ---------- 畫面：記帳 ----------
+var mode = "out";
+function chipHTML(list, cls){
+  return list.map(function(c){return '<button class="chip '+cls+'" data-cat="'+c[1]+'"><b>'+c[0]+'</b>'+c[1]+'</button>';}).join("");
+}
+function renderHome(){
+  var now=new Date(), m=monStr(now), d=monthData(m);
+  var h=now.getHours();
+  $("hello").textContent = (h<11?"早安":h<18?"午安":"晚安")+(db.settings.nick?"，"+db.settings.nick:"");
+  $("hello-sub").textContent = (now.getMonth()+1)+" 月 "+now.getDate()+" 日 · 記一筆就好，不用完美。";
+
+  // 提醒
+  var bn=[];
+  var ready = db.wishes.filter(function(w){return w.status==="wait" && Date.now()-w.ts>=WAIT_MS;});
+  if(ready.length) bn.push('<div class="banner">🛍 想買清單裡有 <b>'+ready.length+'</b> 樣東西已經等兩天了，<a href="#" data-go="wish" style="color:inherit">去看看還想不想要</a>。</div>');
+  if(!storageOK) bn.push('<div class="banner">⚠️ 這個瀏覽器沒辦法存資料（可能是私密瀏覽模式），請換一般模式打開。</div>');
+  else if(db.entries.length>=10 && Date.now()-(db.lastBackup||0)>14*864e5) bn.push('<div class="banner">💾 好一陣子沒備份了，有空到「設定」按一下「匯出備份」就好。</div>');
+  $("banners").innerHTML = bn.join("");
+  $("nav-wish").classList.toggle("dot", ready.length>0);
+
+  // 累了
+  var t = db.tired[dayStr()];
+  [].forEach.call($("tired").children,function(b){b.classList.toggle("on", String(t)===b.dataset.t);});
+  $("tired-msg").textContent = t===2 ? "辛苦了。今天先好好休息，想犒賞自己就從「累了的預算」裡拿，不用內疚。"
+    : t===1 ? "有點累的日子，記得喝水、早點睡。" : t===0 ? "今天狀態不錯 ☀️" : "點一下就好，之後可以看出累的時候花多少。";
+
+  // 累了的預算
+  var pct=num(db.settings.carePct), budget=d.income*pct/100, left=budget-d.care;
+  var cc;
+  if(d.income<=0){
+    cc='<h2>🌸 累了的預算</h2><p class="muted" style="margin:0">這個月還沒記收入。抽成或獎金進來時，切到「收入進來」記一下，就會自動算出這個月可以寵自己多少（收入的 '+pct+'%）。</p>'+
+       (d.care>0?'<p class="muted">目前照顧自己花了 '+money(d.care)+'。</p>':'');
+  } else {
+    var used=Math.min(100,budget>0?d.care/budget*100:100);
+    var msg = left>budget*0.5 ? "還很充裕，累了就好好照顧自己 🌿"
+      : left>0 ? "還有一些，可以挑最想要的那一個 ☕"
+      : left===0 ? "這個月的寵愛額度剛好用完了，下次收入進來又會有新的。"
+      : "這個月多寵了自己 "+money(-left)+"，沒關係，下個月再調整就好。想要的東西可以先放進「想買清單」。";
+    cc='<div class="row between"><h2 style="margin:0">🌸 累了的預算</h2><span class="muted">收入的 '+pct+'%</span></div>'+
+       '<div class="big" style="margin-top:6px">'+(left>=0?"還有 "+money(left):"多用了 "+money(-left))+'</div>'+
+       '<div class="bar '+(left<0?"rose":left<budget*0.3?"warm":"")+'"><i style="width:'+used+'%"></i></div>'+
+       '<div class="muted">這個月 '+money(budget)+'，已用 '+money(d.care)+'</div><p style="margin:8px 0 0;font-size:14px">'+msg+'</p>';
+  }
+  $("care-card").innerHTML=cc;
+
+  // 生活費
+  var fx=fixedTotal(), sv=d.income*num(db.settings.savePct)/100;
+  var dl=daysInMonth(now)-now.getDate()+1;
+  var lc='<h2>🍚 這個月的生活費</h2>';
+  if(d.income<=0){
+    lc+='<p class="muted" style="margin:0">記了收入以後，這裡會幫妳算：扣掉固定支出、存款、累了的預算，剩下每天大約可以用多少。</p>';
+  } else {
+    var living=d.income-Math.max(fx,d.fixedPaid)-sv-budget;
+    var livingLeft=living-(d.need-d.fixedPaid);
+    lc+='<div class="big">'+(livingLeft>=0?"還有 "+money(livingLeft):"超過 "+money(-livingLeft))+'</div>'+
+        '<div class="muted">剩 '+dl+' 天'+(livingLeft>0?'，每天大約 <b style="color:var(--ink)">'+money(livingLeft/dl)+'</b>':'')+'</div>'+
+        '<details style="margin-top:8px"><summary>怎麼算的</summary><div class="muted" style="margin-top:6px">'+
+        '這個月收入 '+money(d.income)+'<br>－ 固定支出 '+money(Math.max(fx,d.fixedPaid))+'<br>－ 存款 '+money(sv)+'<br>－ 累了的預算 '+money(budget)+
+        '<br>＝ 生活費 '+money(living)+'<br>－ 已經花的必要支出 '+money(d.need-d.fixedPaid)+'</div></details>';
+  }
+  var w=worstMonth();
+  if(db.settings.worst && w){
+    var safe=(w.income-fx-w.income*num(db.settings.savePct)/100-w.income*num(db.settings.carePct)/100)/30;
+    if(safe>0) lc+='<p style="margin:10px 0 0;font-size:14px">🛡 以最差的月份（'+monthLabel(w.m)+'，'+money(w.income)+'）來看，每天生活費抓 <b>'+money(safe)+'</b> 左右，比較安心。</p>';
+  }
+  $("life-card").innerHTML=lc;
+
+  // 清單
+  var es=db.entries.filter(function(e){return e.date.slice(0,7)===m;}).sort(function(a,b){return b.ts-a.ts;});
+  $("list-count").textContent=es.length?es.length+" 筆":"";
+  var last="";
+  $("list").innerHTML = es.length ? es.map(function(e){
+    var dd=Number(e.date.slice(8)), head="";
+    if(e.date!==last){ last=e.date; var tt=db.tired[e.date]; head='<div class="muted" style="margin-top:8px">'+(e.date.slice(5).replace("-","/"))+(tt===2?" · 🌙 好累":tt===1?" · 🌥 有點累":"")+'</div>'; }
+    return head+'<div class="it"><div class="ic">'+(ICON[e.cat]||"·")+'</div><div class="nm">'+esc(e.cat)+(e.note?'<small>'+esc(e.note)+'</small>':'')+'</div>'+
+      '<div class="am '+(e.kind==="in"?"in":"")+'">'+(e.kind==="in"?"+":"")+money(e.amt)+'</div><button class="x" data-del="'+e.id+'" aria-label="刪除">×</button></div>';
+  }).join("") : '<div class="empty">還沒有紀錄。從一筆開始就很好了 🌱</div>';
+}
+
+function setMode(m){
+  mode=m;
+  [].forEach.call($("mode").children,function(b){b.classList.toggle("on",b.dataset.m===m);});
+  $("cats-out").style.display=m==="out"?"":"none";
+  $("cats-in").style.display=m==="in"?"":"none";
+}
+
+var lastAdded=null, toastTimer;
+function toast(t, undo){
+  $("toast-t").textContent=t;
+  $("toast-undo").style.display=undo?"":"none";
+  $("toast").classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){$("toast").classList.remove("on");},3500);
+}
+
+function addEntry(cat){
+  var a=num($("amt").value);
+  if(!a){ $("amt").focus(); toast("先輸入金額喔"); return; }
+  var e={id:uid(), date:dayStr(), ts:Date.now(), kind:mode, amt:a, cat:cat, note:$("note").value.trim()};
+  db.entries.push(e); save();
+  lastAdded=e.id;
+  $("amt").value=""; $("note").value="";
+  renderHome();
+  if(mode==="in"){ setMode("out"); openSplit(e); }
+  else toast((CARE_SET[cat]?"記好了，照顧自己也很重要 🌸":"記好了 🌿")+" "+cat+" "+money(a), true);
+}
+
+// ---------- 先分錢 ----------
+function openSplit(e){
+  var m=monStr(), d=monthData(m), fx=fixedTotal(), s=db.settings;
+  var sv=e.amt*num(s.savePct)/100, care=e.amt*num(s.carePct)/100;
+  var sp=db.splits[m]||{};
+  var fixedLeft=Math.max(0,fx-(sp.fixedSet||0));
+  var fxNow=Math.min(fixedLeft,e.amt);
+  var rest=e.amt-fxNow-sv-care;
+  $("split-body").innerHTML=
+    '<h2 style="font-size:18px">💰 '+esc(e.cat)+' 進來了 '+money(e.amt)+'</h2>'+
+    '<p class="muted" style="margin-top:-4px">辛苦了！先花一分鐘把錢分好，剩下的就可以安心用。</p>'+
+    '<div class="ln"><label><input type="checkbox" id="c-fx"> 🏠 先放旁邊：固定支出</label><b>'+money(fxNow)+'</b></div>'+
+    (fx===0?'<p class="muted" style="margin:4px 0">（還沒設定固定支出，可以到「設定」填房租、水電）</p>':
+      fixedLeft<fx?'<p class="muted" style="margin:4px 0">這個月固定支出 '+money(fx)+'，之前已經分出 '+money(fx-fixedLeft)+'</p>':'')+
+    '<div class="ln"><label><input type="checkbox" id="c-sv"> 🐷 存起來（'+num(s.savePct)+'%）</label><b>'+money(sv)+'</b></div>'+
+    '<div class="ln"><label><input type="checkbox" id="c-care"> 🌸 累了的預算（'+num(s.carePct)+'%）</label><b>'+money(care)+'</b></div>'+
+    '<div class="ln" style="border:0"><span>🍚 剩下的生活費</span><b class="big" style="font-size:22px">'+money(rest)+'</b></div>'+
+    (rest<0?'<p class="muted">這筆不夠全部分完也沒關係，先分固定支出，其他等下一筆收入。</p>':'')+
+    '<p class="muted">分錢的方式可以是：轉到另一個帳戶、領現金放信封，選妳順手的就好。</p>'+
+    '<button class="btn full" id="split-ok" style="margin-top:8px">好，分好了</button>'+
+    '<button class="btn ghost full" id="split-later" style="margin-top:8px">等一下再分</button>';
+  $("split").classList.add("on");
+  $("split-ok").onclick=function(){
+    if($("c-fx").checked){ sp.fixedSet=(sp.fixedSet||0)+fxNow; }
+    db.splits[m]=sp; save();
+    $("split").classList.remove("on");
+    toast("分好了，剩下的安心用 🌿");
+    renderAll();
+  };
+  $("split-later").onclick=function(){ $("split").classList.remove("on"); toast("記好了，記得找時間分錢喔"); };
+}
+
+// ---------- 想買清單 ----------
+function renderWish(){
+  var now=Date.now();
+  var act=db.wishes.filter(function(w){return w.status==="wait";}).sort(function(a,b){return a.ts-b.ts;});
+  $("w-list").innerHTML = act.length ? act.map(function(w){
+    var left=WAIT_MS-(now-w.ts), ready=left<=0;
+    var hrs=Math.ceil(left/3600000);
+    return '<div class="wish"><div class="row between"><b>'+esc(w.name)+'</b><span>'+(w.price?money(w.price):"")+'</span></div>'+
+      '<span class="pill '+(ready?"ready":"")+'">'+(ready?"✨ 等兩天了，還想要嗎？":"冷靜中，還有 "+(hrs>24?Math.ceil(hrs/24)+" 天":hrs+" 小時"))+'</span>'+
+      (ready?'<div class="acts"><button class="btn small" data-w="buy" data-id="'+w.id+'">還是想要，買！</button><button class="btn small sage" data-w="skip" data-id="'+w.id+'">不用了</button><button class="btn small ghost" data-w="wait" data-id="'+w.id+'">再想想</button></div>'
+        :'<div class="acts"><button class="btn small ghost" data-w="skip" data-id="'+w.id+'">已經不想要了</button></div>')+'</div>';
+  }).join("") : '<div class="empty">目前沒有。下次看到想買的，先放進來 🛍</div>';
+  var skipped=db.wishes.filter(function(w){return w.status==="skip";});
+  var savedAmt=skipped.reduce(function(a,w){return a+(w.price||0);},0);
+  var bought=db.wishes.filter(function(w){return w.status==="bought";}).length;
+  $("w-saved").innerHTML='<h2>🌱 冷靜期的成果</h2><p style="margin:0">放下了 <b>'+skipped.length+'</b> 樣，大約省下 <b>'+money(savedAmt)+'</b>；想清楚後買了 <b>'+bought+'</b> 樣。</p><p class="muted" style="margin:6px 0 0">買了也很好，那是想清楚的選擇。</p>';
+}
+function wishAct(act,id){
+  var w=db.wishes.filter(function(x){return x.id===id;})[0]; if(!w) return;
+  if(act==="skip"){ w.status="skip"; toast("放下了，省下 "+money(w.price||0)+" 🌱"); }
+  else if(act==="wait"){ w.ts=Date.now()-WAIT_MS+24*3600000; toast("好，明天再問妳一次"); }
+  else if(act==="buy"){
+    w.status="bought";
+    if(w.price) db.entries.push({id:uid(),date:dayStr(),ts:Date.now(),kind:"out",amt:w.price,cat:"衝動買",note:w.name+"（等過兩天）"});
+    toast("想清楚了就安心買 🎁 已記到「衝動買」");
+  }
+  save(); renderAll();
+}
+
+// ---------- 每月 ----------
+function pastMonths(){
+  var set={};
+  db.entries.forEach(function(e){set[e.date.slice(0,7)]=1;});
+  Object.keys(db.months).forEach(function(m){set[m]=1;});
+  set[monStr()]=1;
+  return Object.keys(set).sort().reverse();
+}
+function worstMonth(){
+  var cur=monStr(), w=null;
+  pastMonths().forEach(function(m){
+    if(m===cur) return;
+    var inc=monthData(m).income + num((db.months[m]||{}).manual);
+    if(inc>0 && (!w || inc<w.income)) w={m:m,income:inc};
+  });
+  return w;
+}
+function renderMonth(){
+  // 累的時候花多少
+  var days={};
+  db.entries.forEach(function(e){ if(e.kind==="out"&&CARE_SET[e.cat]){ days[e.date]=(days[e.date]||0)+e.amt; } });
+  var tiredDays=[], okDays=[];
+  Object.keys(db.tired).forEach(function(d){ (db.tired[d]>=1?tiredDays:okDays).push(days[d]||0); });
+  function avg(a){return a.length?a.reduce(function(x,y){return x+y;},0)/a.length:0;}
+  var th='<h2>🌙 累的時候花多少？</h2>';
+  if(tiredDays.length<2||okDays.length<2){
+    th+='<p class="muted" style="margin:0">每天在「記帳」頁點一下累不累，記滿幾天，這裡就會幫妳比較。目前記了 '+Object.keys(db.tired).length+' 天。</p>';
+  } else {
+    var a1=avg(tiredDays), a2=avg(okDays);
+    th+='<div class="stat"><div>累的日子<b>'+money(a1)+'/天</b></div><div>還好的日子<b>'+money(a2)+'/天</b></div><div>記了<b>'+Object.keys(db.tired).length+' 天</b></div></div>'+
+      '<p style="margin:10px 0 0;font-size:14px">'+(a1>a2*1.3?"累的時候照顧自己的花費比較多，這很正常 —— 身體在求救。可以先準備一些不花錢的照顧方式（早點睡、泡澡、散步），或把預算留給累的日子。"
+        :"累的日子和平常差不多，妳照顧自己的方式很穩定 🌿")+'</p><p class="muted" style="margin:4px 0 0">（只算「照顧自己的」那幾類）</p>';
+  }
+  $("m-tired").innerHTML=th;
+
+  var w=worstMonth(), fx=fixedTotal();
+  $("m-worst").innerHTML='<h2>🛡 最差月份的安心線</h2>'+(w?
+    '<p style="margin:0">目前收入最少的是 <b>'+monthLabel(w.m)+'</b>：'+money(w.income)+'</p><p class="muted" style="margin:6px 0 0">扣掉固定支出 '+money(fx)+' 後剩 '+money(w.income-fx)+'。生活費照這個月來抓，收入好的月份多出來的，就是多存或多寵自己的空間。</p>'
+    :'<p class="muted" style="margin:0">記滿一個月以上的收入後，這裡會找出最差的月份，當作安排生活費的安心線。</p>');
+
+  $("m-list").innerHTML=pastMonths().map(function(m){
+    var d=monthData(m), info=db.months[m]||{};
+    return '<div class="mo"><div class="row between"><b>'+monthLabel(m)+'</b><div class="rate" data-m="'+m+'">'+
+      ["好","普通","差"].map(function(r){return '<button data-r="'+r+'" class="'+(info.rating===r?"on":"")+'">'+r+'</button>';}).join("")+'</div></div>'+
+      '<div class="stat"><div>收入<b>'+money(d.income+num(info.manual))+'</b></div><div>必要<b>'+money(d.need)+'</b></div><div>照顧自己<b>'+money(d.care)+'</b></div></div>'+
+      '<div class="field"><input data-note="'+m+'" placeholder="這個月的感覺、發生的事（可對照流年）" value="'+esc(info.note)+'"></div>'+
+      '<details><summary>補記這個月的收入（記帳前的月份可以用）</summary><div class="field"><input class="n" data-manual="'+m+'" inputmode="numeric" placeholder="金額" value="'+(info.manual||"")+'"><span class="muted">會加在上面的收入裡</span></div></details></div>';
+  }).join("");
+}
+
+// ---------- 設定 ----------
+function renderSet(){
+  var s=db.settings;
+  $("fixed").innerHTML=s.fixed.map(function(f,i){
+    return '<div class="field"><input data-fn="'+i+'" value="'+esc(f.name)+'" placeholder="名稱"><input class="n" data-fa="'+i+'" inputmode="numeric" value="'+(f.amt||"")+'" placeholder="金額"><button class="x" data-fdel="'+i+'">×</button></div>';
+  }).join("")+'<p class="muted" style="margin:4px 0 8px">每月合計 '+money(fixedTotal())+'</p>';
+  $("s-nick").value=s.nick||""; $("s-save").value=s.savePct; $("s-care").value=s.carePct; $("s-worst").checked=!!s.worst;
+  $("last-backup").textContent=db.lastBackup?"上次備份："+new Date(db.lastBackup).toLocaleDateString("zh-TW"):"還沒有備份過。";
+}
+
+function renderAll(){ renderHome(); renderWish(); renderMonth(); renderSet(); }
+
+// ---------- 事件 ----------
+function go(p){
+  [].forEach.call(document.querySelectorAll(".page"),function(s){s.classList.toggle("on",s.id==="p-"+p);});
+  [].forEach.call(document.querySelectorAll("nav button"),function(b){b.classList.toggle("on",b.dataset.p===p);});
+  renderAll(); window.scrollTo(0,0);
+}
+document.querySelector("nav").onclick=function(ev){var b=ev.target.closest("button");if(b)go(b.dataset.p);};
+$("need").innerHTML=chipHTML(NEED,"need"); $("care").innerHTML=chipHTML(CARE,"care"); $("inc").innerHTML=chipHTML(INC,"inc");
+$("mode").onclick=function(ev){var b=ev.target.closest("button");if(b)setMode(b.dataset.m);};
+document.querySelector("#p-home .card").addEventListener("click",function(ev){var c=ev.target.closest("[data-cat]");if(c)addEntry(c.dataset.cat);});
+$("tired").onclick=function(ev){var b=ev.target.closest("button");if(!b)return;var k=dayStr(),v=Number(b.dataset.t);
+  if(db.tired[k]===v) delete db.tired[k]; else db.tired[k]=v; save(); renderHome();};
+$("p-home").addEventListener("click",function(ev){
+  var g=ev.target.closest("[data-go]"); if(g){ev.preventDefault();go(g.dataset.go);return;}
+  var d=ev.target.closest("[data-del]"); if(d){
+    var e=db.entries.filter(function(x){return x.id===d.dataset.del;})[0];
+    if(e && confirm("刪掉這筆 "+e.cat+" "+money(e.amt)+"？")){ db.entries=db.entries.filter(function(x){return x!==e;}); save(); renderAll(); }
+  }
+});
+$("toast-undo").onclick=function(){
+  if(!lastAdded) return;
+  db.entries=db.entries.filter(function(x){return x.id!==lastAdded;}); lastAdded=null; save(); renderAll();
+  $("toast").classList.remove("on");
+};
+$("split").onclick=function(ev){ if(ev.target.id==="split") $("split").classList.remove("on"); };
+
+$("w-add").onclick=function(){
+  var n=$("w-name").value.trim(); if(!n){$("w-name").focus();return;}
+  db.wishes.push({id:uid(),name:n,price:num($("w-price").value),ts:Date.now(),status:"wait"});
+  $("w-name").value=""; $("w-price").value=""; save(); renderAll();
+  toast("放進清單了，兩天後再問妳 🛍");
+};
+$("w-list").onclick=function(ev){var b=ev.target.closest("[data-w]");if(b)wishAct(b.dataset.w,b.dataset.id);};
+
+$("m-list").addEventListener("click",function(ev){
+  var b=ev.target.closest(".rate button"); if(!b) return;
+  var m=b.parentNode.dataset.m; db.months[m]=db.months[m]||{};
+  db.months[m].rating = db.months[m].rating===b.dataset.r ? "" : b.dataset.r; save(); renderMonth();
+});
+$("m-list").addEventListener("change",function(ev){
+  var t=ev.target, m;
+  if((m=t.dataset.note)){ db.months[m]=db.months[m]||{}; db.months[m].note=t.value; save(); }
+  if((m=t.dataset.manual)){ db.months[m]=db.months[m]||{}; db.months[m].manual=num(t.value); save(); renderMonth(); }
+});
+
+$("p-set").addEventListener("change",function(ev){
+  var t=ev.target, s=db.settings;
+  if(t.dataset.fn!==undefined) s.fixed[t.dataset.fn].name=t.value;
+  if(t.dataset.fa!==undefined) s.fixed[t.dataset.fa].amt=num(t.value);
+  if(t.id==="s-save") s.savePct=num(t.value);
+  if(t.id==="s-care") s.carePct=num(t.value);
+  if(t.id==="s-worst") s.worst=t.checked;
+  if(t.id==="s-nick") s.nick=t.value.trim();
+  save(); renderSet(); renderHome();
+});
+$("p-set").addEventListener("click",function(ev){
+  var d=ev.target.closest("[data-fdel]"); if(d){ db.settings.fixed.splice(Number(d.dataset.fdel),1); save(); renderSet(); }
+});
+$("fixed-add").onclick=function(){ db.settings.fixed.push({name:"",amt:0}); save(); renderSet(); };
+
+$("export").onclick=function(){
+  db.lastBackup=Date.now(); save();
+  var blob=new Blob([JSON.stringify(db,null,1)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="記帳備份-"+dayStr()+".json";
+  document.body.appendChild(a); a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
+  renderSet(); toast("備份檔下載好了，存到安全的地方 💾");
+};
+$("import-btn").onclick=function(){ $("import").click(); };
+$("import").onchange=function(){
+  var f=this.files[0]; if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{ var d=JSON.parse(r.result); if(!d||!Array.isArray(d.entries)) throw 0;
+      if(!confirm("用這個備份取代目前的資料嗎？（目前有 "+db.entries.length+" 筆，備份裡有 "+d.entries.length+" 筆）")) return;
+      db=d; load2(); save(); renderAll(); toast("還原好了 🌿");
+    }catch(e){ alert("這個檔案看起來不是記帳備份，沒有改動任何資料。"); }
+  };
+  r.readAsText(f); this.value="";
+};
+function load2(){ var b=blank(); for(var k in b) if(db[k]===undefined) db[k]=b[k]; for(var k2 in b.settings) if(db.settings[k2]===undefined) db.settings[k2]=b.settings[k2]; }
+
+load(); save(); renderAll();
+setInterval(function(){ if(!document.hidden) renderHome(); }, 60000);
+})();
+</script>
+</body>
+</html>
