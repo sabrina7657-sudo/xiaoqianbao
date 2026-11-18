@@ -190,6 +190,11 @@ details summary{cursor:pointer;color:var(--soft);font-size:14px}
     <p class="muted" style="margin:0">只存在這台手機裡，首頁會跟妳打招呼。</p>
   </div>
   <div class="card">
+    <h2>領薪水的日子</h2>
+    <div class="field"><span style="flex:1">每個月幾號領薪水</span><input class="n" id="s-payday" inputmode="numeric"> 號</div>
+    <p class="muted" style="margin:0">「這個月」會從這天算到下次領薪水的前一天。例如 15 號領薪水，11 月 ＝ 11/15 到 12/14。</p>
+  </div>
+  <div class="card">
     <h2>每月固定要付的</h2>
     <p class="muted" style="margin-top:-4px">收入進來時，會先提醒妳把這些分出來。</p>
     <div id="fixed"></div>
@@ -242,7 +247,7 @@ var WAIT_MS = 48*3600*1000;
 // ---------- 資料 ----------
 var db;
 function blank(){return {v:1, entries:[], tired:{}, wishes:[], months:{}, splits:{}, lastBackup:0,
-  settings:{nick:"", fixed:[{name:"房租",amt:0},{name:"水電網路",amt:0}], savePct:10, carePct:15, worst:true}};}
+  settings:{nick:"", payday:15, fixed:[{name:"房租",amt:0},{name:"水電網路",amt:0}], savePct:10, carePct:15, worst:true}};}
 function load(){
   try{ var s = localStorage.getItem(KEY); db = s ? JSON.parse(s) : blank(); }catch(e){ db = blank(); }
   var b = blank();
@@ -256,19 +261,26 @@ function save(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){ 
 function $(id){return document.getElementById(id);}
 function pad(n){return (n<10?"0":"")+n;}
 function dayStr(d){d=d||new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
-function monStr(d){return dayStr(d).slice(0,7);}
+// 「這個月」＝ 發薪日 到 下個月發薪日前一天，用發薪那個月命名（例：11 月 ＝ 11/15–12/14）
+function payday(){var p=Math.round(num(db.settings.payday));return p>=1&&p<=28?p:1;}
+function per(ds){var y=+ds.slice(0,4),mo=+ds.slice(5,7),dd=+ds.slice(8,10);
+  if(dd<payday()){mo--; if(mo<1){mo=12;y--;}} return y+"-"+pad(mo);}
+function monStr(d){return per(dayStr(d));}
+function nextPayday(m){var p=m.split("-");return new Date(+p[0],+p[1],payday());}
 function money(n){return "$"+Math.round(n).toLocaleString("en-US");}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function num(v){v=String(v||"").replace(/[^\d.]/g,"");return v?Number(v):0;}
 function monthLabel(m){var p=m.split("-");return p[0]+" 年 "+Number(p[1])+" 月";}
+function rangeLabel(m){if(payday()===1)return "";var s=m.split("-"),e=new Date(nextPayday(m)-864e5);
+  return Number(s[1])+"/"+payday()+"–"+(e.getMonth()+1)+"/"+e.getDate();}
 function daysInMonth(d){return new Date(d.getFullYear(),d.getMonth()+1,0).getDate();}
 function fixedTotal(){return db.settings.fixed.reduce(function(a,f){return a+num(f.amt);},0);}
 
 function monthData(m){
   var r={income:0,need:0,care:0,fixedPaid:0,n:0};
   db.entries.forEach(function(e){
-    if(e.date.slice(0,7)!==m) return;
+    if(per(e.date)!==m) return;
     r.n++;
     if(e.kind==="in") r.income+=e.amt;
     else if(CARE_SET[e.cat]) r.care+=e.amt;
@@ -294,6 +306,8 @@ function renderHome(){
   if(ready.length) bn.push('<div class="banner">🛍 想買清單裡有 <b>'+ready.length+'</b> 樣東西已經等兩天了，<a href="#" data-go="wish" style="color:inherit">去看看還想不想要</a>。</div>');
   if(!storageOK) bn.push('<div class="banner">⚠️ 這個瀏覽器沒辦法存資料（可能是私密瀏覽模式），請換一般模式打開。</div>');
   else if(db.entries.length>=10 && Date.now()-(db.lastBackup||0)>14*864e5) bn.push('<div class="banner">💾 好一陣子沒備份了，有空到「設定」按一下「匯出備份」就好。</div>');
+  var hasSalary=db.entries.some(function(e){return e.kind==="in"&&e.cat==="本月薪資"&&per(e.date)===m;});
+  if(now.getDate()===payday() && !hasSalary) bn.unshift('<div class="banner">💼 今天是領薪水的日子，辛苦了！薪水進來後，切到「收入進來」記一下，我們一起先分錢。</div>');
   $("banners").innerHTML = bn.join("");
   $("nav-wish").classList.toggle("dot", ready.length>0);
 
@@ -324,15 +338,17 @@ function renderHome(){
 
   // 生活費
   var fx=fixedTotal(), sv=d.income*num(db.settings.savePct)/100;
-  var dl=daysInMonth(now)-now.getDate()+1;
-  var lc='<h2>🍚 這個月的生活費</h2>';
+  var today0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  var dl=Math.max(1,Math.round((nextPayday(m)-today0)/864e5));
+  var rl=rangeLabel(m);
+  var lc='<div class="row between"><h2 style="margin:0 0 10px">🍚 這個月的生活費</h2>'+(rl?'<span class="muted">'+rl+'</span>':'')+'</div>';
   if(d.income<=0){
     lc+='<p class="muted" style="margin:0">記了收入以後，這裡會幫妳算：扣掉固定支出、存款、累了的預算，剩下每天大約可以用多少。</p>';
   } else {
     var living=d.income-Math.max(fx,d.fixedPaid)-sv-budget;
     var livingLeft=living-(d.need-d.fixedPaid);
     lc+='<div class="big">'+(livingLeft>=0?"還有 "+money(livingLeft):"超過 "+money(-livingLeft))+'</div>'+
-        '<div class="muted">剩 '+dl+' 天'+(livingLeft>0?'，每天大約 <b style="color:var(--ink)">'+money(livingLeft/dl)+'</b>':'')+'</div>'+
+        '<div class="muted">離下次領薪水還有 '+dl+' 天'+(livingLeft>0?'，每天大約 <b style="color:var(--ink)">'+money(livingLeft/dl)+'</b>':'')+'</div>'+
         '<details style="margin-top:8px"><summary>怎麼算的</summary><div class="muted" style="margin-top:6px">'+
         '這個月收入 '+money(d.income)+'<br>－ 固定支出 '+money(Math.max(fx,d.fixedPaid))+'<br>－ 存款 '+money(sv)+'<br>－ 累了的預算 '+money(budget)+
         '<br>＝ 生活費 '+money(living)+'<br>－ 已經花的必要支出 '+money(d.need-d.fixedPaid)+'</div></details>';
@@ -345,7 +361,7 @@ function renderHome(){
   $("life-card").innerHTML=lc;
 
   // 清單
-  var es=db.entries.filter(function(e){return e.date.slice(0,7)===m;}).sort(function(a,b){return b.ts-a.ts;});
+  var es=db.entries.filter(function(e){return per(e.date)===m;}).sort(function(a,b){return b.ts-a.ts;});
   $("list-count").textContent=es.length?es.length+" 筆":"";
   var last="";
   $("list").innerHTML = es.length ? es.map(function(e){
@@ -448,7 +464,7 @@ function wishAct(act,id){
 // ---------- 每月 ----------
 function pastMonths(){
   var set={};
-  db.entries.forEach(function(e){set[e.date.slice(0,7)]=1;});
+  db.entries.forEach(function(e){set[per(e.date)]=1;});
   Object.keys(db.months).forEach(function(m){set[m]=1;});
   set[monStr()]=1;
   return Object.keys(set).sort().reverse();
@@ -487,7 +503,7 @@ function renderMonth(){
 
   $("m-list").innerHTML=pastMonths().map(function(m){
     var d=monthData(m), info=db.months[m]||{};
-    return '<div class="mo"><div class="row between"><b>'+monthLabel(m)+'</b><div class="rate" data-m="'+m+'">'+
+    return '<div class="mo"><div class="row between"><div><b>'+monthLabel(m)+'</b>'+(rangeLabel(m)?'<br><span class="muted" style="font-size:12px">'+rangeLabel(m)+'</span>':'')+'</div><div class="rate" data-m="'+m+'">'+
       ["好","普通","差"].map(function(r){return '<button data-r="'+r+'" class="'+(info.rating===r?"on":"")+'">'+r+'</button>';}).join("")+'</div></div>'+
       '<div class="stat"><div>收入<b>'+money(d.income+num(info.manual))+'</b></div><div>必要<b>'+money(d.need)+'</b></div><div>照顧自己<b>'+money(d.care)+'</b></div></div>'+
       '<div class="field"><input data-note="'+m+'" placeholder="這個月的感覺、發生的事（可對照流年）" value="'+esc(info.note)+'"></div>'+
@@ -501,7 +517,7 @@ function renderSet(){
   $("fixed").innerHTML=s.fixed.map(function(f,i){
     return '<div class="field"><input data-fn="'+i+'" value="'+esc(f.name)+'" placeholder="名稱"><input class="n" data-fa="'+i+'" inputmode="numeric" value="'+(f.amt||"")+'" placeholder="金額"><button class="x" data-fdel="'+i+'">×</button></div>';
   }).join("")+'<p class="muted" style="margin:4px 0 8px">每月合計 '+money(fixedTotal())+'</p>';
-  $("s-nick").value=s.nick||""; $("s-save").value=s.savePct; $("s-care").value=s.carePct; $("s-worst").checked=!!s.worst;
+  $("s-nick").value=s.nick||""; $("s-payday").value=payday(); $("s-save").value=s.savePct; $("s-care").value=s.carePct; $("s-worst").checked=!!s.worst;
   $("last-backup").textContent=db.lastBackup?"上次備份："+new Date(db.lastBackup).toLocaleDateString("zh-TW"):"還沒有備份過。";
 }
 
@@ -560,6 +576,7 @@ $("p-set").addEventListener("change",function(ev){
   if(t.id==="s-care") s.carePct=num(t.value);
   if(t.id==="s-worst") s.worst=t.checked;
   if(t.id==="s-nick") s.nick=t.value.trim();
+  if(t.id==="s-payday"){ var pd=Math.round(num(t.value)); s.payday=pd>=1&&pd<=28?pd:s.payday; if(pd>28) alert("請填 1～28 號之間（29 號以後有些月份沒有）。"); renderMonth(); }
   save(); renderSet(); renderHome();
 });
 $("p-set").addEventListener("click",function(ev){
