@@ -224,6 +224,7 @@ details summary{cursor:pointer;color:var(--soft);font-size:14px}
       <input type="file" id="import" accept=".json,application/json" hidden>
     </div>
   </div>
+  <p class="muted" id="ver" style="text-align:center;font-size:12px"></p>
 </section>
 
 </main>
@@ -628,6 +629,24 @@ $("import").onchange=function(){
 function load2(){ var b=blank(); for(var k in b) if(db[k]===undefined) db[k]=b[k]; for(var k2 in b.settings) if(db.settings[k2]===undefined) db.settings[k2]=b.settings[k2]; }
 
 $("kid").onclick=function(){ kidOn=!kidOn; renderKid(); };
+
+// ---------- 自動檢查新版本（手機主畫面的小錢包有時會一直用舊的） ----------
+var VERSION="2026-11-21b";
+$("ver").textContent="版本 "+VERSION;
+function checkUpdate(){
+  if(location.protocol.indexOf("http")!==0) return;
+  fetch(location.pathname+"?check="+Date.now(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(t){
+    var m=t.match(/var VERSION="([^"]+)"/);
+    if(m && m[1]!==VERSION && !$("upd")){
+      var b=document.createElement("div"); b.className="banner"; b.id="upd";
+      b.innerHTML='✨ 小錢包有新版本了，<a href="#" style="color:inherit;font-weight:600">點這裡更新</a>（資料不會不見）';
+      b.querySelector("a").onclick=function(ev){ev.preventDefault(); location.replace(location.pathname+"?v="+encodeURIComponent(m[1]));};
+      $("p-home").insertBefore(b,$("p-home").firstChild);
+    }
+  }).catch(function(){});
+}
+checkUpdate();
+document.addEventListener("visibilitychange",function(){ if(!document.hidden) checkUpdate(); });
 load(); save(); renderAll(); renderKid();
 setInterval(function(){ if(!document.hidden) renderHome(); }, 60000);
 })();
