@@ -105,6 +105,10 @@ nav .dot b::after{content:"";position:absolute;top:2px;right:-4px;width:8px;heig
 .wish{padding:12px 0;border-bottom:1px solid var(--line)}
 .wish:last-child{border-bottom:0}
 .wish .acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.kid{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:99px;background:var(--bg);border:1.5px solid var(--line);font-size:14px;color:var(--soft)}
+.kid.on{background:#e3ecf5;border-color:#8eaacb;color:#3f5a78;font-weight:600}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;background:#e3ecf5;color:#3f5a78;margin-left:6px;vertical-align:1px}
+@media (prefers-color-scheme: dark){.kid.on,.tag{background:#33404e;color:#c9dbef;border-color:#5d7a9a}}
 .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--bg);color:var(--soft)}
 .pill.ready{background:var(--gold-l);color:var(--ink)}
 .empty{color:var(--soft);font-size:14px;text-align:center;padding:14px 0}
@@ -126,6 +130,8 @@ details summary{cursor:pointer;color:var(--soft);font-size:14px}
       <button data-m="in">收入進來</button>
     </div>
     <div class="amount"><span>$</span><input id="amt" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off"></div>
+    <input class="note" id="note" placeholder="備註（可以不寫）" style="margin:0 0 10px">
+    <button class="kid" id="kid" type="button"><span id="kid-check">○</span><span>這筆是<span class="kid-name"></span>的</span></button>
     <div id="cats-out">
       <div class="label">必要的</div>
       <div class="chips" id="need"></div>
@@ -136,8 +142,7 @@ details summary{cursor:pointer;color:var(--soft);font-size:14px}
       <div class="label">是哪一種收入？</div>
       <div class="chips" id="inc"></div>
     </div>
-    <input class="note" id="note" placeholder="備註（可以不寫）">
-    <p class="muted" style="margin:8px 0 0">輸入金額 → 點一下分類，就記好了。</p>
+    <p class="muted" style="margin:10px 0 0">輸入金額 →（想寫再寫備註）→ 點一下分類，就記好了。</p>
   </div>
 
   <div class="card">
@@ -187,6 +192,8 @@ details summary{cursor:pointer;color:var(--soft);font-size:14px}
   <div class="card">
     <h2>怎麼稱呼妳</h2>
     <div class="field"><input id="s-nick" placeholder="例如：芷薰"></div>
+    <div class="label">孩子的名字（記帳時可以標記「這筆是孩子的」）</div>
+    <div class="field"><input id="s-kid" placeholder="例如：小寶"></div>
     <p class="muted" style="margin:0">只存在這台手機裡，首頁會跟妳打招呼。</p>
   </div>
   <div class="card">
@@ -279,13 +286,14 @@ function daysInMonth(d){return new Date(d.getFullYear(),d.getMonth()+1,0).getDat
 function fixedTotal(){return db.settings.fixed.reduce(function(a,f){return a+num(f.amt);},0);}
 
 function monthData(m){
-  var r={income:0,need:0,care:0,fixedPaid:0,n:0};
+  var r={income:0,need:0,care:0,fixedPaid:0,kid:0,n:0};
   db.entries.forEach(function(e){
     if(per(e.date)!==m) return;
     r.n++;
     if(e.kind==="in") r.income+=e.amt;
     else if(CARE_SET[e.cat]) r.care+=e.amt;
     else { r.need+=e.amt; if(FIXED_CATS[e.cat]) r.fixedPaid+=e.amt; }
+    if(e.kind!=="in" && e.who==="kid") r.kid+=e.amt;
   });
   return r;
 }
@@ -368,16 +376,25 @@ function renderHome(){
   $("list").innerHTML = es.length ? es.map(function(e){
     var dd=Number(e.date.slice(8)), head="";
     if(e.date!==last){ last=e.date; var tt=db.tired[e.date]; head='<div class="muted" style="margin-top:8px">'+(e.date.slice(5).replace("-","/"))+(tt===2?" · 🌙 好累":tt===1?" · 🌥 有點累":"")+'</div>'; }
-    return head+'<div class="it"><div class="ic">'+(ICON[e.cat]||"·")+'</div><div class="nm">'+esc(e.cat)+(e.note?'<small>'+esc(e.note)+'</small>':'')+'</div>'+
+    return head+'<div class="it"><div class="ic">'+(ICON[e.cat]||"·")+'</div><div class="nm">'+esc(e.cat)+(e.who==="kid"?'<span class="tag">👦 '+esc(kidName())+'</span>':'')+(e.note?'<small>'+esc(e.note)+'</small>':'')+'</div>'+
       '<div class="am '+(e.kind==="in"?"in":"")+'">'+(e.kind==="in"?"+":"")+money(e.amt)+'</div><button class="x" data-del="'+e.id+'" aria-label="刪除">×</button></div>';
   }).join("") : '<div class="empty">還沒有紀錄。從一筆開始就很好了 🌱</div>';
 }
 
+var kidOn=false;
+function kidName(){return (db.settings.kid||"").trim()||"孩子";}
+function renderKid(){
+  $("kid").classList.toggle("on",kidOn);
+  $("kid-check").textContent=kidOn?"✓":"○";
+  [].forEach.call(document.querySelectorAll(".kid-name"),function(s){s.textContent=kidName();});
+  $("kid").style.display=mode==="out"?"":"none";
+}
 function setMode(m){
   mode=m;
   [].forEach.call($("mode").children,function(b){b.classList.toggle("on",b.dataset.m===m);});
   $("cats-out").style.display=m==="out"?"":"none";
   $("cats-in").style.display=m==="in"?"":"none";
+  renderKid();
 }
 
 var lastAdded=null, toastTimer;
@@ -393,6 +410,8 @@ function addEntry(cat){
   var a=num($("amt").value);
   if(!a){ $("amt").focus(); toast("先輸入金額喔"); return; }
   var e={id:uid(), date:dayStr(), ts:Date.now(), kind:mode, amt:a, cat:cat, note:$("note").value.trim()};
+  if(mode==="out" && kidOn) e.who="kid";
+  kidOn=false; renderKid();
   db.entries.push(e); save();
   lastAdded=e.id;
   $("amt").value=""; $("note").value="";
@@ -507,6 +526,7 @@ function renderMonth(){
     return '<div class="mo"><div class="row between"><div><b>'+monthLabel(m)+'</b>'+(rangeLabel(m)?'<br><span class="muted" style="font-size:12px">'+rangeLabel(m)+'</span>':'')+'</div><div class="rate" data-m="'+m+'">'+
       ["好","普通","差"].map(function(r){return '<button data-r="'+r+'" class="'+(info.rating===r?"on":"")+'">'+r+'</button>';}).join("")+'</div></div>'+
       '<div class="stat"><div>收入<b>'+money(d.income+num(info.manual))+'</b></div><div>必要<b>'+money(d.need)+'</b></div><div>照顧自己<b>'+money(d.care)+'</b></div></div>'+
+      (d.kid?'<div class="muted" style="margin-top:4px">👦 其中 '+esc(kidName())+' 的花費 <b style="color:var(--ink)">'+money(d.kid)+'</b></div>':'')+
       '<div class="field"><input data-note="'+m+'" placeholder="這個月的感覺、發生的事（可對照流年）" value="'+esc(info.note)+'"></div>'+
       '<details><summary>補記這個月的收入（記帳前的月份可以用）</summary><div class="field"><input class="n" data-manual="'+m+'" inputmode="numeric" placeholder="金額" value="'+(info.manual||"")+'"><span class="muted">會加在上面的收入裡</span></div></details></div>';
   }).join("");
@@ -518,7 +538,7 @@ function renderSet(){
   $("fixed").innerHTML=s.fixed.map(function(f,i){
     return '<div class="field"><input data-fn="'+i+'" value="'+esc(f.name)+'" placeholder="名稱"><input class="n" data-fa="'+i+'" inputmode="numeric" value="'+(f.amt||"")+'" placeholder="金額"><button class="x" data-fdel="'+i+'">×</button></div>';
   }).join("")+'<p class="muted" style="margin:4px 0 8px">每月合計 '+money(fixedTotal())+'</p>';
-  $("s-nick").value=s.nick||""; $("s-payday").value=payday(); $("s-save").value=s.savePct; $("s-care").value=s.carePct; $("s-worst").checked=!!s.worst;
+  $("s-nick").value=s.nick||""; $("s-kid").value=s.kid||""; $("s-payday").value=payday(); $("s-save").value=s.savePct; $("s-care").value=s.carePct; $("s-worst").checked=!!s.worst;
   $("last-backup").textContent=db.lastBackup?"上次備份："+new Date(db.lastBackup).toLocaleDateString("zh-TW"):"還沒有備份過。";
 }
 
@@ -577,6 +597,7 @@ $("p-set").addEventListener("change",function(ev){
   if(t.id==="s-care") s.carePct=num(t.value);
   if(t.id==="s-worst") s.worst=t.checked;
   if(t.id==="s-nick") s.nick=t.value.trim();
+  if(t.id==="s-kid"){ s.kid=t.value.trim(); renderKid(); renderMonth(); }
   if(t.id==="s-payday"){ var pd=Math.round(num(t.value)); s.payday=pd>=1&&pd<=28?pd:s.payday; if(pd>28) alert("請填 1～28 號之間（29 號以後有些月份沒有）。"); renderMonth(); }
   save(); renderSet(); renderHome();
 });
@@ -606,7 +627,8 @@ $("import").onchange=function(){
 };
 function load2(){ var b=blank(); for(var k in b) if(db[k]===undefined) db[k]=b[k]; for(var k2 in b.settings) if(db.settings[k2]===undefined) db.settings[k2]=b.settings[k2]; }
 
-load(); save(); renderAll();
+$("kid").onclick=function(){ kidOn=!kidOn; renderKid(); };
+load(); save(); renderAll(); renderKid();
 setInterval(function(){ if(!document.hidden) renderHome(); }, 60000);
 })();
 </script>
