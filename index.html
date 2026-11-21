@@ -244,7 +244,7 @@ details summary{cursor:pointer;color:var(--soft);font-size:14px}
 (function(){
 "use strict";
 var KEY = "xiaoqianbao-v1";
-var NEED = [["🥪","早餐"],["🍱","午餐"],["🍲","晚餐"],["🚌","交通"],["🏠","房租"],["💡","水電網路"],["🧻","日用品"],["🏥","醫療"],["🤝","人情"],["📦","其他必要"]];
+var NEED = [["🥪","早餐"],["🍱","午餐"],["🍲","晚餐"],["🚌","交通"],["🏠","房租"],["💡","水電網路"],["🧻","日用品"],["🏥","醫療"],["🤝","人情"],["🪙","零用錢"],["📦","其他必要"]];
 var CARE = [["🛵","外送"],["🍰","犒賞"],["🧴","保養"],["👗","衣服"],["✨","衝動買"],["☕","飲料點心"],["🎁","小確幸"]];
 var INC = [["💼","本月薪資"],["🎉","獎金"],["🔮","占星諮詢"],["🌱","其他收入"]];
 var CARE_SET = {}; CARE.forEach(function(c){CARE_SET[c[1]]=1;});
@@ -631,7 +631,7 @@ function load2(){ var b=blank(); for(var k in b) if(db[k]===undefined) db[k]=b[k
 $("kid").onclick=function(){ kidOn=!kidOn; renderKid(); };
 
 // ---------- 自動檢查新版本（手機主畫面的小錢包有時會一直用舊的） ----------
-var VERSION="2026-11-21b";
+var VERSION="2026-11-21c";
 $("ver").textContent="版本 "+VERSION;
 function checkUpdate(){
   if(location.protocol.indexOf("http")!==0) return;
