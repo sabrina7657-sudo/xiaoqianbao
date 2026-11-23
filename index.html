@@ -109,6 +109,8 @@ nav .dot b::after{content:"";position:absolute;top:2px;right:-4px;width:8px;heig
 .kid.on{background:#e3ecf5;border-color:#8eaacb;color:#3f5a78;font-weight:600}
 .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;background:#e3ecf5;color:#3f5a78;margin-left:6px;vertical-align:1px}
 @media (prefers-color-scheme: dark){.kid.on,.tag{background:#33404e;color:#c9dbef;border-color:#5d7a9a}}
+.tag.back{background:var(--sage-l);color:var(--ink)}
+.rp{color:var(--sage);font-size:17px;padding:4px 6px}
 .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--bg);color:var(--soft)}
 .pill.ready{background:var(--gold-l);color:var(--ink)}
 .empty{color:var(--soft);font-size:14px;text-align:center;padding:14px 0}
@@ -287,7 +289,7 @@ function daysInMonth(d){return new Date(d.getFullYear(),d.getMonth()+1,0).getDat
 function fixedTotal(){return db.settings.fixed.reduce(function(a,f){return a+num(f.amt);},0);}
 
 function monthData(m){
-  var r={income:0,need:0,care:0,fixedPaid:0,kid:0,n:0};
+  var r={income:0,need:0,care:0,fixedPaid:0,kid:0,repaid:0,n:0};
   db.entries.forEach(function(e){
     if(per(e.date)!==m) return;
     r.n++;
@@ -295,6 +297,7 @@ function monthData(m){
     else if(CARE_SET[e.cat]) r.care+=e.amt;
     else { r.need+=e.amt; if(FIXED_CATS[e.cat]) r.fixedPaid+=e.amt; }
     if(e.kind!=="in" && e.who==="kid") r.kid+=e.amt;
+    if(e.kind!=="in" && e.repaid) r.repaid+=e.repaid;
   });
   return r;
 }
@@ -356,12 +359,12 @@ function renderHome(){
     lc+='<p class="muted" style="margin:0">記了收入以後，這裡會幫妳算：扣掉固定支出、存款、累了的預算，剩下每天大約可以用多少。</p>';
   } else {
     var living=d.income-Math.max(fx,d.fixedPaid)-sv-budget;
-    var livingLeft=living-(d.need-d.fixedPaid);
+    var livingLeft=living-(d.need-d.fixedPaid)+d.repaid;
     lc+='<div class="big">'+(livingLeft>=0?"還有 "+money(livingLeft):"超過 "+money(-livingLeft))+'</div>'+
         '<div class="muted">離下次領薪水還有 '+dl+' 天'+(livingLeft>0?'，每天大約 <b style="color:var(--ink)">'+money(livingLeft/dl)+'</b>':'')+'</div>'+
         '<details style="margin-top:8px"><summary>怎麼算的</summary><div class="muted" style="margin-top:6px">'+
         '這個月收入 '+money(d.income)+'<br>－ 固定支出 '+money(Math.max(fx,d.fixedPaid))+'<br>－ 存款 '+money(sv)+'<br>－ 累了的預算 '+money(budget)+
-        '<br>＝ 生活費 '+money(living)+'<br>－ 已經花的必要支出 '+money(d.need-d.fixedPaid)+'</div></details>';
+        '<br>＝ 生活費 '+money(living)+'<br>－ 已經花的必要支出 '+money(d.need-d.fixedPaid)+(d.repaid?'<br>＋ 別人還我的 '+money(d.repaid):'')+'</div></details>';
   }
   var w=worstMonth();
   if(db.settings.worst && w){
@@ -377,8 +380,10 @@ function renderHome(){
   $("list").innerHTML = es.length ? es.map(function(e){
     var dd=Number(e.date.slice(8)), head="";
     if(e.date!==last){ last=e.date; var tt=db.tired[e.date]; head='<div class="muted" style="margin-top:8px">'+(e.date.slice(5).replace("-","/"))+(tt===2?" · 🌙 好累":tt===1?" · 🌥 有點累":"")+'</div>'; }
-    return head+'<div class="it"><div class="ic">'+(ICON[e.cat]||"·")+'</div><div class="nm">'+esc(e.cat)+(e.who==="kid"?'<span class="tag">👦 '+esc(kidName())+'</span>':'')+(e.note?'<small>'+esc(e.note)+'</small>':'')+'</div>'+
-      '<div class="am '+(e.kind==="in"?"in":"")+'">'+(e.kind==="in"?"+":"")+money(e.amt)+'</div><button class="x" data-del="'+e.id+'" aria-label="刪除">×</button></div>';
+    return head+'<div class="it"><div class="ic">'+(ICON[e.cat]||"·")+'</div><div class="nm">'+esc(e.cat)+(e.who==="kid"?'<span class="tag">👦 '+esc(kidName())+'</span>':'')+(e.repaid?'<span class="tag back">↩ 已還 '+money(e.repaid)+'</span>':'')+(e.note?'<small>'+esc(e.note)+'</small>':'')+'</div>'+
+      '<div class="am '+(e.kind==="in"?"in":"")+'"'+(e.repaid>=e.amt?' style="text-decoration:line-through;color:var(--soft)"':'')+'>'+(e.kind==="in"?"+":"")+money(e.amt)+'</div>'+
+      (e.kind==="in"?'':'<button class="rp" data-rp="'+e.id+'" aria-label="對方還錢了">↩</button>')+
+      '<button class="x" data-del="'+e.id+'" aria-label="刪除">×</button></div>';
   }).join("") : '<div class="empty">還沒有紀錄。從一筆開始就很好了 🌱</div>';
 }
 
@@ -559,6 +564,18 @@ $("tired").onclick=function(ev){var b=ev.target.closest("button");if(!b)return;v
   if(db.tired[k]===v) delete db.tired[k]; else db.tired[k]=v; save(); renderHome();};
 $("p-home").addEventListener("click",function(ev){
   var g=ev.target.closest("[data-go]"); if(g){ev.preventDefault();go(g.dataset.go);return;}
+  var rp=ev.target.closest("[data-rp]"); if(rp){
+    var x=db.entries.filter(function(y){return y.id===rp.dataset.rp;})[0]; if(!x) return;
+    if(x.repaid){
+      if(confirm("取消「對方已還 "+money(x.repaid)+"」嗎？")){ delete x.repaid; save(); renderAll(); }
+    } else {
+      var v=prompt("這筆是幫別人先付的嗎？\n對方還了妳多少？（還的錢會回到生活費）", String(x.amt));
+      if(v===null) return; v=num(v); if(!v) return;
+      x.repaid=Math.min(v,x.amt); save(); renderAll();
+      toast("收到 "+money(x.repaid)+"，已經放回生活費 🌿");
+    }
+    return;
+  }
   var d=ev.target.closest("[data-del]"); if(d){
     var e=db.entries.filter(function(x){return x.id===d.dataset.del;})[0];
     if(e && confirm("刪掉這筆 "+e.cat+" "+money(e.amt)+"？")){ db.entries=db.entries.filter(function(x){return x!==e;}); save(); renderAll(); }
@@ -631,7 +648,7 @@ function load2(){ var b=blank(); for(var k in b) if(db[k]===undefined) db[k]=b[k
 $("kid").onclick=function(){ kidOn=!kidOn; renderKid(); };
 
 // ---------- 自動檢查新版本（手機主畫面的小錢包有時會一直用舊的） ----------
-var VERSION="2026-11-21c";
+var VERSION="2026-11-23a";
 $("ver").textContent="版本 "+VERSION;
 function checkUpdate(){
   if(location.protocol.indexOf("http")!==0) return;
