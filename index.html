@@ -380,9 +380,9 @@ function renderHome(){
   $("list").innerHTML = es.length ? es.map(function(e){
     var dd=Number(e.date.slice(8)), head="";
     if(e.date!==last){ last=e.date; var tt=db.tired[e.date]; head='<div class="muted" style="margin-top:8px">'+(e.date.slice(5).replace("-","/"))+(tt===2?" · 🌙 好累":tt===1?" · 🌥 有點累":"")+'</div>'; }
-    return head+'<div class="it"><div class="ic">'+(ICON[e.cat]||"·")+'</div><div class="nm">'+esc(e.cat)+(e.who==="kid"?'<span class="tag">👦 '+esc(kidName())+'</span>':'')+(e.repaid?'<span class="tag back">↩ 已還 '+money(e.repaid)+'</span>':'')+(e.note?'<small>'+esc(e.note)+'</small>':'')+'</div>'+
+    return head+'<div class="it"><div class="ic">'+(ICON[e.cat]||"·")+'</div><div class="nm">'+esc(e.cat)+(e.who==="kid"?'<span class="tag">👦 '+esc(kidName())+'</span>':'')+(e.repaid?'<span class="tag back">💸 已還 '+money(e.repaid)+'</span>':'')+(e.note?'<small>'+esc(e.note)+'</small>':'')+'</div>'+
       '<div class="am '+(e.kind==="in"?"in":"")+'"'+(e.repaid>=e.amt?' style="text-decoration:line-through;color:var(--soft)"':'')+'>'+(e.kind==="in"?"+":"")+money(e.amt)+'</div>'+
-      (e.kind==="in"?'':'<button class="rp" data-rp="'+e.id+'" aria-label="對方還錢了">↩</button>')+
+      (e.kind==="in"?'':'<button class="rp" data-rp="'+e.id+'" aria-label="對方還錢了">💸</button>')+
       '<button class="x" data-del="'+e.id+'" aria-label="刪除">×</button></div>';
   }).join("") : '<div class="empty">還沒有紀錄。從一筆開始就很好了 🌱</div>';
 }
@@ -648,7 +648,7 @@ function load2(){ var b=blank(); for(var k in b) if(db[k]===undefined) db[k]=b[k
 $("kid").onclick=function(){ kidOn=!kidOn; renderKid(); };
 
 // ---------- 自動檢查新版本（手機主畫面的小錢包有時會一直用舊的） ----------
-var VERSION="2026-11-23a";
+var VERSION="2026-11-23b";
 $("ver").textContent="版本 "+VERSION;
 function checkUpdate(){
   if(location.protocol.indexOf("http")!==0) return;
